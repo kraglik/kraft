@@ -18,15 +18,29 @@ class Tensor(ABC):
 
     @abstractmethod
     @property
+    def requires_grad(self) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    @requires_grad.setter
+    def requires_grad(self, value) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    @property
     def grad(self) -> 'Tensor | None':
         raise NotImplementedError
 
-    def backward(self) -> None:
-        pass
+    @abstractmethod
+    def detach(self) -> 'Tensor':
+        raise NotImplementedError
 
     @abstractmethod
     def _set_parent_node(self, node: Any) -> None:
         self._parent_node = node
+
+    def backward(self) -> None:
+        pass
 
     @abstractmethod
     def to(self, device: Device) -> 'Tensor':
@@ -64,6 +78,10 @@ class Tensor(ABC):
 
     @abstractmethod
     def neg(self) -> 'Tensor':
+        raise NotImplementedError
+
+    @abstractmethod
+    def __matmul__(self, other: 'Tensor') -> 'Tensor':
         raise NotImplementedError
 
     @abstractmethod
