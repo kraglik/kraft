@@ -10,7 +10,7 @@ class Optimizer(ABC):
         self._parameters = parameters
 
     @abstractmethod
-    def step(self, preserve_graph=False) -> None:
+    def step(self, retain_grad=False) -> None:
         raise NotImplementedError
 
     @abstractmethod
