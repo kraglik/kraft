@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from kraft.tensor import Tensor
+from kraft.autograd import Tensor
 
 
 class Optimizer(ABC):
