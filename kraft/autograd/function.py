@@ -1,60 +1,54 @@
 from abc import ABC, abstractmethod
 from typing import Any
-from .tensor import Tensor
+
+from .utils import broadcast
+from .variable import Variable
 
 
-class FunctionContext(ABC):
-    @abstractmethod
-    def save_for_backward(self, *tensors: Tensor) -> None:
-        raise NotImplementedError
+class FunctionCtx(object):
+    def __init__(self, inputs):
+        self.inputs = inputs
+        self.input_vars = tuple(i for i in inputs if isinstance(i, Variable))
+        self.saved_tensors = ()
 
-    @abstractmethod
-    def get_saved_tensors(self) -> list[Tensor]:
-        raise NotImplementedError
+    def save_for_backward(self, *tensors):
+        self.saved_tensors = tensors
 
 
-class _ComputationalGraphNode:
-    def __init__(self, inputs: Any, outputs: Any, function: 'Function') -> None:
-        self._input = inputs
-        self._output = outputs
-        self._function = function
+class BackwardFunction(object):
+    def __init__(self, ctx, backward, variable):
+        self.ctx = ctx
+        self.backward_fn = backward
+        self.variable = variable
 
-    @property
-    def inputs(self) -> Any:
-        return self._input
+    def backward(self):
+        grads = self.backward_fn(self.ctx, self.variable.grad)
 
-    @property
-    def outputs(self) -> Any:
-        return self._output
+        if not isinstance(grads, tuple):
+            grads = (grads, )
 
-    @property
-    def function(self) -> 'Function':
-        return self._function
+        for inp, grad in zip(self.ctx.input_vars, grads):
+            inp.grad += broadcast(inp.grad, grad)
 
 
 class Function(ABC):
-    def __call__(self, *args: Any):
-        pass
+    def __call__(self, *inputs):
+        inputs = tuple(inputs)
+        ctx = FunctionCtx(inputs=inputs)
+        output = self.forward(ctx, *inputs)
+        output.grad_fn = BackwardFunction(
+            ctx=ctx,
+            backward=self.backward,
+            variable=output,
+        )
+        return output
 
     @staticmethod
     @abstractmethod
-    def forward(ctx: Any, *args: Any) -> Any:
-        """
-
-        :param ctx: Function context
-        :param args: Any variables needed to compute function output
-        :return:
-        """
+    def forward(ctx, *inputs):
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def backward(ctx: Any, *grad_outputs: Any) -> Any:
-        """
-
-        :param ctx:
-        :param grad_outputs:
-        :return:
-        """
+    def backward(ctx, grad):
         raise NotImplementedError
-

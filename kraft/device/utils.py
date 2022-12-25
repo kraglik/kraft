@@ -1,5 +1,7 @@
 import logging
+from typing import Any
 
+import cupy
 import numpy as np
 
 from .device import Device, DeviceType
@@ -47,3 +49,13 @@ def get_available_gpu_devices() -> list[Device]:
         Device(device_type=DeviceType.GPU, index=device_index)
         for device_index in range(device_count)
     ]
+
+
+def get_backend(data: np.ndarray | cupy.ndarray | Any):
+    if not isinstance(data, (np.ndarray, cupy.ndarray)):
+        data = data.data
+
+    if isinstance(data, np.ndarray):
+        return np
+
+    return cupy

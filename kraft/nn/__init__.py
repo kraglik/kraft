@@ -1,2 +1,4 @@
-from ._parameter import Parameter
-from ._module import Module
+from .module import Module, Parameter
+from .sequential import Sequential
+from .layer import Linear
+from .activation import Sigmoid, ReLU

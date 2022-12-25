@@ -1,16 +1,15 @@
-from .autograd import Tensor
-from ._ops.tensor_functions import (
-    random,
+from .autograd import Variable
+from ._ops.tensor_utils import (
     randn,
     zeros,
     zeros_like,
 )
+from .device.utils import get_backend
 from ._dtypes import float16, float32, float64, int16, int32, int64
 
 
 __all__ = [
-    "Tensor",
-    "random",
+    "Variable",
     "randn",
     "zeros",
     "zeros_like",
@@ -20,4 +19,5 @@ __all__ = [
     "float16",
     "float32",
     "float64",
+    "get_backend",
 ]
