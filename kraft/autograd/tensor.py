@@ -1,40 +1,35 @@
-from abc import ABC, abstractmethod
 from typing import Any, Optional, Type
 
 import numpy as np
 from numpy import single
 
+import kraft.device.utils
 from kraft.device import Device
 
 
-class Tensor(ABC):
-    def __init__(self):
-        self._parent_node: Any = None
+class Tensor(object):
+    def __init__(
+        self,
+        data,
+        requires_grad=True,
+        device=None
+    ):
+        self.requires_grad = requires_grad
+        self._device = device
+        self.grad = None
+        self.grad_fn = None
+
+        if device.is_cpu:
+            self.data = self._to_numpy_ndarray(data)
+        else:
+            self.data = self._to_cupy_ndarray(data, device)
 
     @property
     def device(self) -> Device:
-        raise NotImplementedError
-
-    @property
-    def requires_grad(self) -> bool:
-        raise NotImplementedError
-
-    @requires_grad.setter
-    def requires_grad(self, value) -> None:
-        raise NotImplementedError
-
-    @property
-    def grad(self) -> 'Tensor | None':
-        raise NotImplementedError
+        return self._device
 
     def detach(self) -> 'Tensor':
-        raise NotImplementedError
-
-    def _set_parent_node(self, node: Any) -> None:
-        self._parent_node = node
-
-    def backward(self) -> None:
-        pass
+        return Tensor(self.data, requires_grad=True, device=self.device)
 
     def to(self, device: Device) -> 'Tensor':
         raise NotImplementedError
@@ -56,8 +51,8 @@ class Tensor(ABC):
         raise NotImplementedError
 
     @property
-    def shape(self) -> list[int]:
-        raise NotImplementedError
+    def shape(self) -> tuple[int]:
+        return self.data.shape
 
     def scalar(self) -> float:
         raise NotImplementedError
@@ -130,3 +125,23 @@ class Tensor(ABC):
 
     def __setitem__(self, key, value):
         raise NotImplementedError
+
+    @staticmethod
+    def _to_numpy_ndarray(data):
+        return np.array(data)
+
+    @staticmethod
+    def _to_cupy_ndarray(data, device):
+        if not kraft.device.utils.gpu_available:
+            raise RuntimeError("Attempted to move tensor to GPU in a system without available GPU!")
+
+        import cupy
+
+        with cupy.cuda.Device(device.index):
+            if isinstance(data, (np.ndarray, cupy.ndarray)):
+                return cupy.asarray(data)
+
+            return cupy.array(data)
+
+    def __str__(self):
+        return f"<kraft.Tensor ({str(self.data)}), device={self.device}, grad_fn={self.grad_fn}>"
