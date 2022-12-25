@@ -13,9 +13,7 @@ class MLP(nn.Module):
         super().__init__()
 
         self.network = nn.Sequential(
-            nn.Linear(2, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
+            nn.Linear(2, 32),
             nn.ReLU(),
             nn.Linear(32, 1),
             nn.Sigmoid(),
@@ -40,23 +38,27 @@ def main():
 
     sgd = kraft.optim.Adam(net.parameters(), lr=1e-2)
 
-    n_epochs = 1500
+    n_epochs = 500
+
+    train = [
+        (
+            kraft.Variable(item[0], device=device, requires_grad=False),
+            kraft.Variable(item[1], device=device, requires_grad=False)
+        )
+        for item in DATA
+    ]
 
     for _ in range(n_epochs):
         sgd.zero_grad()
 
-        items = random.choices(DATA, k=1)
-        xs = [item[0] for item in items]
-        ys = [item[1] for item in items]
+        random.shuffle(train)
 
-        inputs = kraft.Variable(xs, device=device)
-        targets = kraft.Variable(ys, device=device)
+        for inputs, targets in train:
+            outputs = net(inputs)
+            loss = fun.mse_loss(outputs, targets)
+            loss.backward()
 
-        outputs = net(inputs)
-        loss = fun.mse_loss(outputs, targets)
-        loss.backward()
-
-        sgd.step()
+            sgd.step()
 
     xs = [item[0] for item in DATA]
     ys = [item[1] for item in DATA]

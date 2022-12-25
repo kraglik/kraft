@@ -28,7 +28,8 @@ class BackwardFunction(object):
             grads = (grads, )
 
         for inp, grad in zip(self.ctx.input_vars, grads):
-            inp.grad += broadcast(inp.grad, grad)
+            if inp.requires_grad:
+                inp.grad += broadcast(inp.grad, grad)
 
 
 class Function(ABC):

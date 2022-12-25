@@ -57,8 +57,16 @@ class Variable(object):
             return cupy.array(data, dtype=dtype)
 
     @staticmethod
-    def _to_variable(var, device=None):
-        return var if isinstance(var, Variable) else Variable(var, device=device)
+    def _to_variable(var, device=None, requires_grad=True):
+        return (
+            var
+            if isinstance(var, Variable)
+            else Variable(
+                var,
+                device=device,
+                requires_grad=requires_grad
+            )
+        )
 
     def to_(self, device: Device):
         self.device = device
@@ -78,54 +86,136 @@ class Variable(object):
         return neg(self)
 
     def __truediv__(self, other):
-        from kraft.autograd.ops import div
+        from kraft.autograd.ops import div, div_var_float
 
-        return div(self, self._to_variable(other, device=self.device))
+        if isinstance(other, (int, float)):
+            return div_var_float(self, other)
+
+        return div(
+            self,
+            self._to_variable(
+                other,
+                device=self.device,
+                requires_grad=self.requires_grad or other.requires_grad,
+            )
+        )
 
     def __rtruediv__(self, other):
-        from kraft.autograd.ops import div
+        from kraft.autograd.ops import div, div_float_var
 
-        return div(Variable._to_variable(other, device=self.device), self)
+        if isinstance(other, (int, float)):
+            return div_float_var(other, self)
+
+        return div(
+            Variable._to_variable(
+                other,
+                device=self.device,
+                requires_grad=self.requires_grad or other.requires_grad,
+            ),
+            self
+        )
 
     def __add__(self, other):
         from kraft.autograd.ops import add
 
-        return add(self, self._to_variable(other, device=self.device))
+        return add(
+            self,
+            self._to_variable(
+                other,
+                device=self.device,
+                requires_grad=self.requires_grad or other.requires_grad,
+            )
+        )
 
     def __radd__(self, other):
         from kraft.autograd.ops import add
 
-        return add(Variable._to_variable(other, device=self.device), self)
+        return add(
+            Variable._to_variable(
+                other,
+                device=self.device,
+                requires_grad=self.requires_grad or other.requires_grad,
+            ),
+            self
+        )
 
     def __sub__(self, other):
         from kraft.autograd.ops import sub
 
-        return sub(self, self._to_variable(other, device=self.device))
+        return sub(
+            self,
+            self._to_variable(
+                other,
+                device=self.device,
+                requires_grad=self.requires_grad or other.requires_grad,
+            )
+        )
 
     def __rsub__(self, other):
         from kraft.autograd.ops import sub
 
-        return sub(self._to_variable(other, device=self.device), self)
+        return sub(
+            self._to_variable(
+                other,
+                device=self.device,
+                requires_grad=self.requires_grad or other.requires_grad,
+            ),
+            self
+        )
 
     def __mul__(self, other):
-        from kraft.autograd.ops import mul
+        from kraft.autograd.ops import mul, mul_var_float
 
-        return mul(self, self._to_variable(other, device=self.device))
+        if isinstance(other, (float, int)):
+            return mul_var_float(self, other)
+
+        return mul(
+            self,
+            self._to_variable(
+                other,
+                device=self.device,
+                requires_grad=self.requires_grad or other.requires_grad,
+            )
+        )
 
     def __rmul__(self, other):
-        from kraft.autograd.ops import mul
+        from kraft.autograd.ops import mul, mul_var_float
 
-        return mul(self._to_variable(other, device=self.device), self)
+        if isinstance(other, (float, int)):
+            return mul_var_float(self, other)
+
+        return mul(
+            self._to_variable(
+                other,
+                device=self.device,
+                requires_grad=self.requires_grad or other.requires_grad,
+            ),
+            self
+        )
 
     def __matmul__(self, other):
         from kraft.autograd.ops import matmul
 
-        return matmul(self, self._to_variable(other, device=self.device))
+        return matmul(
+            self,
+            self._to_variable(
+                other,
+                device=self.device,
+                requires_grad=self.requires_grad or other.requires_grad,
+            )
+        )
 
     def __rmatmul__(self, other):
         from kraft.autograd.ops import matmul
 
-        return matmul(self._to_variable(other, device=self.device), self)
+        return matmul(
+            self._to_variable(
+                other,
+                device=self.device,
+                requires_grad=self.requires_grad or other.requires_grad,
+            ),
+            self
+        )
 
     def __hash__(self):
         return id(self)
@@ -134,42 +224,61 @@ class Variable(object):
         return Variable(
             (self.data == self._to_ndarray(other, dtype=self.dtype)).astype(np.float32),
             device=self.device,
+            requires_grad=self.requires_grad or other.requires_grad,
         )
 
     def __ne__(self, other):
         return Variable(
             (self.data != self._to_ndarray(other, dtype=self.dtype)).astype(np.float32),
             device=self.device,
+            requires_grad=self.requires_grad or other.requires_grad,
         )
 
     def __lt__(self, other):
         return Variable(
             (self.data < self._to_ndarray(other, dtype=self.dtype)).astype(np.float32),
             device=self.device,
+            requires_grad=self.requires_grad or other.requires_grad,
         )
 
     def __gt__(self, other):
         return Variable(
             (self.data > self._to_ndarray(other, dtype=self.dtype)).astype(np.float32),
             device=self.device,
+            requires_grad=self.requires_grad or other.requires_grad,
         )
 
     def __le__(self, other):
         return Variable(
             (self.data <= self._to_ndarray(other, dtype=self.dtype)).astype(np.float32),
             device=self.device,
+            requires_grad=self.requires_grad or other.requires_grad,
         )
 
     def __ge__(self, other):
+        if not isinstance(other, (float, int)):
+            other = self._to_ndarray(other, dtype=self.dtype)
+
         return Variable(
-            (self.data >= self._to_ndarray(other, dtype=self.dtype)).astype(np.float32),
+            (self.data >= other).astype(np.float32),
             device=self.device,
+            requires_grad=self.requires_grad or other.requires_grad,
         )
 
     def sum(self):
         from kraft.autograd.ops import sum_var
 
         return sum_var(self)
+
+    def reshape(self, *new_shape):
+        from kraft.autograd.ops import reshape
+
+        return reshape(self, tuple(new_shape))
+
+    def flatten(self):
+        from kraft.autograd.ops import flatten
+
+        return flatten(self)
 
     def zero_grad(self):
         if self.requires_grad:
