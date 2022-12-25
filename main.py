@@ -38,9 +38,9 @@ def main():
     net = MLP()
     net.to_(device)
 
-    sgd = kraft.optim.SGD(net.parameters(), lr=5e-1, momentum=0.15, nesterov=True)
+    sgd = kraft.optim.Adam(net.parameters(), lr=1e-2)
 
-    n_epochs = 1500
+    n_get_backend(parameter)epochs = 1500
 
     for _ in range(n_epochs):
         sgd.zero_grad()
