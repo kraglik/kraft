@@ -40,7 +40,7 @@ def main():
 
     sgd = kraft.optim.Adam(net.parameters(), lr=1e-2)
 
-    n_get_backend(parameter)epochs = 1500
+    n_epochs = 1500
 
     for _ in range(n_epochs):
         sgd.zero_grad()
