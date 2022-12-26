@@ -10,4 +10,6 @@ from .neg import Neg, neg
 from .exp import Exp, exp
 from .reshape import Reshape, reshape
 from .flatten import Flatten, flatten
-from .conv2d import Conv2d, Deconv2d,conv2d, deconv2d
+from .conv2d import Conv2d, Deconv2d, conv2d, deconv2d
+from .avg_pool2d import AvgPool2d, avg_pool2d
+from .max_pool2d import MaxPool2d, max_pool2d

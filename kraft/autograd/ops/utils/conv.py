@@ -8,14 +8,23 @@ def im2col_array(img, kernel_size, stride, pad, to_matrix=True):
     KH, KW = pair(kernel_size)
     SH, SW = pair(stride)
     PH, PW = pair(pad)
-
     OH = get_conv_outsize(H, KH, SH, PH)
     OW = get_conv_outsize(W, KW, SW, PW)
 
-    if isinstance(img, np.ndarray):
-        col = im2col(img, KH, KW, stride=stride, pad=pad)
+    xp = kraft.get_backend(img)
+    if xp != np:
+        col = _im2col_gpu(img, kernel_size, stride, pad)
     else:
-        col = im2col_gpu(img, kernel_size, stride, pad)
+        img = np.pad(img,
+                     ((0, 0), (0, 0), (PH, PH + SH - 1), (PW, PW + SW - 1)),
+                     mode='constant', constant_values=(0,))
+        col = np.ndarray((N, C, KH, KW, OH, OW), dtype=img.dtype)
+
+        for j in range(KH):
+            j_lim = j + SH * OH
+            for i in range(KW):
+                i_lim = i + SW * OW
+                col[:, :, j, i, :, :] = img[:, :, j:j_lim:SH, i:i_lim:SW]
 
     if to_matrix:
         col = col.transpose((0, 4, 5, 1, 2, 3)).reshape((N * OH * OW, -1))
@@ -34,62 +43,23 @@ def col2im_array(col, img_shape, kernel_size, stride, pad, to_matrix=True):
     if to_matrix:
         col = col.reshape(N, OH, OW, C, KH, KW).transpose(0, 3, 4, 5, 1, 2)
 
-    if isinstance(col, np.ndarray):
-        return col2im(col, img_shape, hf=KH, wf=KW, stride=stride, pad=pad)
+    xp = kraft.get_backend(col)
+
+    if xp != np:
+        img = _col2im_gpu(col, SH, SW, PH, PW, H, W)
+        return img
     else:
-        return col2im_gpu(col, SH, SW, PH, PW, H, W)
+        img = np.zeros((N, C, H + 2 * PH + SH - 1, W + 2 * PW + SW - 1),
+                       dtype=col.dtype)
+        for j in range(KH):
+            j_lim = j + SH * OH
+            for i in range(KW):
+                i_lim = i + SW * OW
+                img[:, :, j:j_lim:SH, i:i_lim:SW] += col[:, :, j, i, :, :]
+        return img[:, :, PH:H + PH, PW:W + PW]
 
 
-def get_indices(np, x_shape, hf, wf, stride, pad):
-    m, n_c, n_h, n_w = x_shape
-
-    out_h = int((n_h + 2 * pad - hf) / stride) + 1
-    out_w = int((n_w + 2 * pad - wf) / stride) + 1
-
-    level1 = np.repeat(np.arange(hf), wf)
-    level1 = np.tile(level1, n_c)
-    every_levels = stride * np.repeat(np.arange(out_h), out_w)
-    i = level1.reshape(-1, 1) + every_levels.reshape(1, -1)
-
-    slide1 = np.tile(np.arange(wf), hf)
-    slide1 = np.tile(slide1, n_c)
-    every_slides = stride * np.tile(np.arange(out_w), out_h)
-    j = slide1.reshape(-1, 1) + every_slides.reshape(1, -1)
-    d = np.repeat(np.arange(n_c), hf * wf).reshape(-1, 1)
-
-    return i, j, d
-
-
-def im2col(x, hf, wf, stride, pad):
-    np = kraft.get_backend(x)
-
-    x_padded = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)), mode='constant')
-    i, j, d = get_indices(np, x.shape, hf, wf, stride, pad)
-    cols = x_padded[:, d, i, j]
-    cols = np.concatenate(cols, axis=-1)
-
-    return cols
-
-
-def col2im(dx_col, x_shape, hf, wf, stride, pad):
-    np = kraft.get_backend(dx_col)
-
-    n, d, h, w = x_shape
-
-    h_padded, w_padded = h + 2 * pad, w + 2 * pad
-    x_padded = np.zeros((n, d, h_padded, w_padded))
-
-    i, j, d = get_indices(np, x_shape, hf, wf, stride, pad)
-    d_x_col_reshaped = np.array(np.hsplit(dx_col, n))
-    np.add.at(x_padded, (slice(None), d, i, j), d_x_col_reshaped)
-
-    if pad == 0:
-        return x_padded
-    elif type(pad) is int:
-        return x_padded[pad:-pad, pad:-pad, :, :]
-
-
-def im2col_gpu(img, kernel_size, stride, pad):
+def _im2col_gpu(img, kernel_size, stride, pad):
     """im2col function for GPU.
     This code is ported from Chainer:
     https://github.com/chainer/chainer/blob/v6.4.0/chainer/utils/conv.py
@@ -130,7 +100,7 @@ def im2col_gpu(img, kernel_size, stride, pad):
     return col
 
 
-def col2im_gpu(col, sy, sx, ph, pw, h, w):
+def _col2im_gpu(col, sy, sx, ph, pw, h, w):
     """col2im function for GPU.
     This code is ported from Chainer:
     https://github.com/chainer/chainer/blob/v6.4.0/chainer/utils/conv.py
@@ -170,6 +140,7 @@ def col2im_gpu(col, sy, sx, ph, pw, h, w):
         'col2im')(col.reduced_view(),
                   h, w, out_h, out_w, kh, kw, sy, sx, ph, pw, dx, dy, img)
     return img
+
 
 
 def get_deconv_outsize(size, k, s, p):

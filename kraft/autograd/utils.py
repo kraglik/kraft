@@ -25,3 +25,14 @@ def broadcast(target_grad, input_grad):
         if dim == 1:
             input_grad = np.sum(input_grad, axis=axis, keepdims=True)
     return input_grad
+
+
+def broadcast_to(target_shape, input_grad):
+    np = get_backend(input_grad)
+
+    while np.ndim(input_grad) > len(target_shape):
+        input_grad = np.sum(input_grad, axis=0)
+    for axis, dim in enumerate(target_shape):
+        if dim == 1:
+            input_grad = np.sum(input_grad, axis=axis, keepdims=True)
+    return input_grad
