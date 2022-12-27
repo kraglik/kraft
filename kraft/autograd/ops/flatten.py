@@ -8,7 +8,12 @@ class Flatten(Function):
         np = kraft.get_backend(var)
         ctx.save_for_backward(var.shape)
 
-        return np.reshape(var, (var.shape[0], -1))
+        return kraft.Variable(
+            data=np.reshape(var.data, (var.shape[0], -1)),
+            device=var.device,
+            dtype=var.data.dtype,
+            requires_grad=var.requires_grad
+        )
 
     @staticmethod
     def backward(ctx, grad):

@@ -5,7 +5,11 @@ from kraft.autograd import Function
 class Div(Function):
     @staticmethod
     def forward(ctx, left, right):
-        output = kraft.Variable(left.data / right.data, device=right.device)
+        output = kraft.Variable(
+            left.data / right.data,
+            device=right.device,
+            requires_grad=left.requires_grad or right.requires_grad,
+        )
         ctx.save_for_backward(output)
         return output
 

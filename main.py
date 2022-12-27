@@ -36,9 +36,9 @@ def main():
     net = MLP()
     net.to_(device)
 
-    sgd = kraft.optim.Adam(net.parameters(), lr=1e-2)
+    sgd = kraft.optim.SGD(net.parameters(), lr=1e-1)
 
-    n_epochs = 500
+    n_epochs = 300
 
     train = [
         (

@@ -265,10 +265,15 @@ class Variable(object):
             requires_grad=self.requires_grad or other.requires_grad,
         )
 
-    def sum(self):
+    def sum(self, axis=None, keepdims=False):
         from kraft.autograd.ops import sum_var
 
         return sum_var(self)
+
+    def tanh(self):
+        from kraft.autograd.ops import tanh
+
+        return tanh(self)
 
     def reshape(self, *new_shape):
         from kraft.autograd.ops import reshape
@@ -279,6 +284,46 @@ class Variable(object):
         from kraft.autograd.ops import flatten
 
         return flatten(self)
+
+    def sqrt(self):
+        from kraft.autograd.ops import sqrt
+
+        return sqrt(self)
+
+    def square(self):
+        from kraft.autograd.ops import square
+
+        return square(self)
+
+    def clip(self, minimum, maximum):
+        from kraft.autograd.ops import clip
+
+        return clip(self, minimum, maximum)
+
+    def abs(self):
+        from kraft.autograd.ops import abs_
+
+        return abs_(self)
+
+    def log(self):
+        from kraft.autograd.ops import log
+
+        return log(self)
+
+    def mean(self, axis=None, keep_dims=True):
+        from kraft.autograd.ops import mean
+
+        return mean(self, axis, keep_dims)
+
+    def min(self, axis=None, keep_dims=False):
+        from kraft.autograd.ops import min_
+
+        return min_(self, axis, keep_dims)
+
+    def max(self, axis=None, keep_dims=False):
+        from kraft.autograd.ops import max_
+
+        return max_(self, axis, keep_dims)
 
     def zero_grad(self):
         if self.requires_grad:

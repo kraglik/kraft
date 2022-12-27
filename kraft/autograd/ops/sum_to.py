@@ -7,8 +7,12 @@ from kraft.autograd.utils import broadcast_to
 class SumTo(Function):
     @staticmethod
     def forward(ctx, x, shape):
-        y = array_sum_to(x, shape)
-        return y
+        return kraft.Variable(
+            data=array_sum_to(x.data, shape),
+            device=x.device,
+            dtype=x.dtype,
+            requires_grad=x.requires_grad,
+        )
 
     @staticmethod
     def backward(ctx, gy):
