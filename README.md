@@ -11,3 +11,8 @@ It defines `Variable`, `Function`, and some basic functions in the `kraft.autogr
 `kraft.nn` provides a `Module` class.
 Every neural network built with `kraft` must inherit this class.
 `kraft.nn` also provides some basic layers, such as `Linear`, `Conv2d`, `MaxPool2d`, and `AvgPool2d`.
+
+
+## Automatic Differentiation
+
+Kraft uses chain rule under the hood. There's a simplified implementation of this rule in the `_overview/one_file_framework.py` file, Kraft mostly follows ideas expressed in that file.
