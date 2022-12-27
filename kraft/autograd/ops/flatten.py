@@ -18,7 +18,7 @@ class Flatten(Function):
     @staticmethod
     def backward(ctx, grad):
         np = kraft.get_backend(grad)
-        old_shape, = ctx.data_for_back
+        old_shape, = ctx.saved_tensors
 
         return np.reshape(grad, old_shape)
 

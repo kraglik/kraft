@@ -7,4 +7,9 @@ from .layer import (
     MaxPool2d,
     AvgPool2d,
 )
-from .activation import Sigmoid, ReLU
+from .activation import (
+    Sigmoid,
+    ReLU,
+    Tanh,
+    Softmax,
+)

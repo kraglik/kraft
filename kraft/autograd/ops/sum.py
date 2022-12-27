@@ -8,7 +8,7 @@ class Sum(Function):
     def forward(ctx, var, axis, keep_dims):
         np = kraft.get_backend(var)
 
-        return kraft.Variable(np.sum(var.data, axis, keep_dims), device=var.device)
+        return kraft.Variable(np.sum(var.data, axis=axis, keepdims=keep_dims), device=var.device)
 
     @staticmethod
     def backward(ctx, grad):

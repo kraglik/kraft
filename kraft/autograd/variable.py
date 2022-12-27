@@ -265,10 +265,17 @@ class Variable(object):
             requires_grad=self.requires_grad or other.requires_grad,
         )
 
-    def sum(self, axis=None, keepdims=False):
+    def argmax(self, axis=None):
+        return np.argmax(self.data, axis=axis)
+
+    def item(self):
+        assert self.data.shape == (), "Can't get item from non-0 ranked tensor"
+        return self.data.item()
+
+    def sum(self, axis=None, keep_dims=False):
         from kraft.autograd.ops import sum_var
 
-        return sum_var(self)
+        return sum_var(self, axis=axis, keep_dims=keep_dims)
 
     def tanh(self):
         from kraft.autograd.ops import tanh

@@ -25,7 +25,7 @@ class Conv2d(Module):
         self.pad = pad
         self.dtype = dtype
 
-        self.W = self._init_weights()
+        self.W = Parameter(self._init_weights())
 
         if nobias:
             self.b = None

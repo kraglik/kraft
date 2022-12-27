@@ -32,7 +32,7 @@ class Max(Function):
         np = kraft.get_backend(var)
 
         result = kraft.Variable(
-            np.max(var.data, axis, keep_dims),
+            np.max(var.data, axis=axis, keepdims=keep_dims),
             device=var.device,
             dtype=var.data.dtype,
             requires_grad=var.requires_grad,
@@ -44,7 +44,7 @@ class Max(Function):
     @staticmethod
     def backward(ctx, grad):
         var, axis, keep_dims = ctx.inputs
-        result = ctx.saved_tensors
+        result, = ctx.saved_tensors
 
         return min_max_grad(grad, result.data, var.data, axis, keep_dims)
 
