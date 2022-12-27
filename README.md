@@ -15,4 +15,5 @@ Every neural network built with `kraft` must inherit this class.
 
 ## Automatic Differentiation
 
-Kraft uses chain rule under the hood. There's a simplified implementation of this rule in the `_overview/one_file_framework.py` file, Kraft mostly follows ideas expressed in that file.
+Kraft uses chain rule under the hood. 
+There's a simplified implementation of this rule in the `_overview/one_file_framework.py` file, Kraft mostly follows ideas expressed in that file.
