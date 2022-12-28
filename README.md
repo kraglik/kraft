@@ -17,3 +17,10 @@ Every neural network built with `kraft` must inherit this class.
 
 Kraft uses chain rule under the hood. 
 There's a simplified implementation of this rule in the `_overview/one_file_framework.py` file, Kraft mostly follows ideas expressed in that file.
+
+
+## MNIST example
+
+There's a file called `mnist_example.py`.
+It contains an example of this framework application to a MNIST problem, with precision ~= 97-98%.
+It features convolutional layers, regularization mechanisms (Dropout, L1/L2 regularization), and Cross Entropy loss
