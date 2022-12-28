@@ -1,3 +1,6 @@
+import random
+from collections import Counter
+
 import mnist
 import numpy as np
 
@@ -10,6 +13,7 @@ from kraft import nn
 from kraft.nn import functional as fun
 
 from tqdm import tqdm
+from more_itertools import chunked
 
 
 class MnistConv(nn.Module):
@@ -18,7 +22,7 @@ class MnistConv(nn.Module):
 
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=16, kernel_size=5),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5),
             nn.ReLU(),
@@ -29,31 +33,47 @@ class MnistConv(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Linear(64, 128),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(128, 10),
-            nn.Softmax(),
         )
 
     def forward(self, xs):
         xs = self.conv(xs)
         xs = self.fc(xs.flatten())
+        xs = fun.softmax(xs)
 
         return xs
 
 
-def train_epoch(net, device, optimizer, dataset):
-    for sample, label in tqdm(dataset):
-        inputs = kraft.Variable(np.array(sample, dtype=np.float32) / 255, device=device)
-        inputs = inputs.reshape(1, 1, 28, 28)
+def inputs_targets_from_chunk(chunk, device):
+    inputs = []
+    targets = []
 
-        target = np.zeros(10)
-        target[label] = 1
-        target = kraft.Variable(target, device=device)
+    for i, t in chunk:
+        input = np.array(i, dtype=np.float32) / 255
+        input = input.reshape((1, 1, 28, 28))
+        inputs.append(input)
+
+        target = np.zeros((1, 10))
+        target[0, t] = 1
+        targets.append(target)
+
+    inputs = kraft.Variable(np.concatenate(inputs, axis=0) / 255, device=device)
+    target = kraft.Variable(np.concatenate(targets, axis=0), device=device)
+
+    return inputs, target
+
+
+def train_epoch(net, device, optimizer, regularizer, dataset):
+    for chunk in chunked(tqdm(dataset), 256):
+        optimizer.zero_grad()
+
+        inputs, target = inputs_targets_from_chunk(chunk, device)
 
         outputs = net(inputs)
         loss = fun.ce_loss(outputs, target)
+        loss = regularizer.add_to_loss(loss)
 
-        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
@@ -61,15 +81,19 @@ def train_epoch(net, device, optimizer, dataset):
 def test_epoch(net, device, dataset):
     correct_answers = 0
 
+    answers = Counter()
+
     for sample, label in tqdm(dataset):
         inputs = kraft.Variable(np.array(sample, dtype=np.float32) / 255, device=device)
         inputs = inputs.reshape(1, 1, 28, 28)
 
-        prediction = net(inputs).argmax() + 1
+        prediction = net(inputs).argmax(axis=1).item()
+        answers[prediction] += 1
 
         correct_answers += prediction == label
 
-    print("precision of trained model is", correct_answers / dataset)
+    print(answers)
+    print("precision of trained model is", correct_answers / len(dataset))
 
 
 def main():
@@ -85,11 +109,14 @@ def main():
 
     net = MnistConv()
     net.to_(device)
+    regularizer = nn.L2Regularizer(net.parameters(), alpha=5e-3)
 
-    optimizer = kraft.optim.Adam(net.parameters(), lr=5e-3)
+    optimizer = kraft.optim.Adam(net.parameters(), lr=1e-2)
 
-    for epoch in range(1, 5):
-        train_epoch(net, device, optimizer, train)
+    for epoch in range(15):
+        random.shuffle(train)
+
+        train_epoch(net, device, optimizer, regularizer, train)
 
     test_epoch(net, device, test)
 

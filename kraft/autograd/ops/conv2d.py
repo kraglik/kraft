@@ -1,5 +1,3 @@
-import numpy as np
-
 import kraft
 
 from kraft.autograd import Function

@@ -29,6 +29,8 @@ class Variable(object):
         return self.data.shape
 
     def _to_ndarray(self, data, dtype):
+        dtype = dtype or data.dtype
+
         if self.device is None or self.device.is_cpu:
             return self._to_np_ndarray(data, dtype)
 
@@ -80,6 +82,11 @@ class Variable(object):
 
         return exp(self)
 
+    def __getitem__(self, index):
+        from kraft.autograd.ops import slice_
+
+        return slice_(self, index)
+
     def __neg__(self):
         from kraft.autograd.ops import neg
 
@@ -116,7 +123,10 @@ class Variable(object):
         )
 
     def __add__(self, other):
-        from kraft.autograd.ops import add
+        from kraft.autograd.ops import add, add_var_float
+
+        if isinstance(other, (float, int)):
+            return add_var_float(self, other)
 
         return add(
             self,
@@ -128,7 +138,10 @@ class Variable(object):
         )
 
     def __radd__(self, other):
-        from kraft.autograd.ops import add
+        from kraft.autograd.ops import add, add_var_float
+
+        if isinstance(other, (float, int)):
+            return add_var_float(self, other)
 
         return add(
             Variable._to_variable(
@@ -265,7 +278,7 @@ class Variable(object):
             requires_grad=self.requires_grad or other.requires_grad,
         )
 
-    def argmax(self, axis=None):
+    def argmax(self, axis=-1):
         return np.argmax(self.data, axis=axis)
 
     def item(self):

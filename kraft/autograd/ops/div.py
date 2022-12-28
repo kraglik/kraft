@@ -27,7 +27,7 @@ class Div(Function):
 class DivVarFloat(Function):
     @staticmethod
     def forward(ctx, left, right):
-        output = kraft.Variable(left.data / right, device=right.device)
+        output = kraft.Variable(left.data / right, device=left.device)
         ctx.save_for_backward(output)
         return output
 
@@ -36,7 +36,7 @@ class DivVarFloat(Function):
         left, right = ctx.inputs
         output, = ctx.saved_tensors
 
-        left_grad = grad / right.data
+        left_grad = grad / right
 
         return left_grad
 

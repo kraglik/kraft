@@ -8,7 +8,7 @@ from kraft.autograd.utils import broadcast_to
 class AvgPool2d(Function):
     @staticmethod
     def forward(ctx, x, kernel_size, stride, pad):
-        col = im2col_array(x, kernel_size, stride, pad,
+        col = im2col_array(x.data, kernel_size, stride, pad,
                            to_matrix=False)
         y = col.mean(axis=(2, 3))
         return kraft.Variable(y, requires_grad=x.requires_grad, dtype=x.dtype, device=x.device)

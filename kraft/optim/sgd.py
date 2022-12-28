@@ -3,7 +3,13 @@ from kraft import get_backend
 
 
 class SGD(Optimizer):
-    def __init__(self, parameters, lr=1e-2, nesterov=False, momentum=0.0):
+    def __init__(
+        self,
+        parameters,
+        lr=1e-2,
+        nesterov=False,
+        momentum=0.0,
+    ):
         super().__init__(parameters)
 
         self._lr = lr

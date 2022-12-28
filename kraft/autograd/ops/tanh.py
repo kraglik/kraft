@@ -8,7 +8,7 @@ class Tanh(Function):
         np = kraft.get_backend(var)
 
         result = kraft.Variable(
-            np.tanh(var),
+            np.tanh(var.data),
             device=var.device,
             requires_grad=var.requires_grad,
             dtype=var.data.dtype,

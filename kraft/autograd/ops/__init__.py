@@ -1,4 +1,4 @@
-from .add import Add, add
+from .add import Add, add, add_var_float
 from .sum import Sum, sum_var
 from .sub import Sub, sub
 from .div import Div, div
@@ -15,6 +15,9 @@ from .mean import Mean, mean
 from .square import Square, square
 from .clip import Clip, clip
 from .tanh import Tanh, tanh
+from .slice import Slice, slice_
+from .softmax import Softmax, softmax
+from .softmax_cross_entropy import softmax_cross_entropy
 from .min_max import Min, Max, min_, max_
 from .reshape import Reshape, reshape
 from .flatten import Flatten, flatten

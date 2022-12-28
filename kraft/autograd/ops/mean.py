@@ -5,9 +5,6 @@ from kraft.autograd.utils import match_shape
 
 
 class Mean(Function):
-    def __init__(self, *new_shape):
-        self.new_shape = new_shape
-
     @staticmethod
     def forward(ctx, var, axis, keep_dims):
         np = kraft.get_backend(var)

@@ -13,3 +13,7 @@ from .activation import (
     Tanh,
     Softmax,
 )
+from .regularizer import Regularizer
+from .regularizers import (
+    L2Regularizer,
+)
