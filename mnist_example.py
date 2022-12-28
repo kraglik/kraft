@@ -21,18 +21,18 @@ class MnistConv(nn.Module):
         super().__init__()
 
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=8, kernel_size=7),
+            nn.Conv2d(in_channels=1, out_channels=16, kernel_size=7),
             nn.ReLU(),
-            nn.Dropout(p=0.15),
-            nn.Conv2d(in_channels=8, out_channels=8, kernel_size=7),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=4),
             nn.ReLU(),
-            nn.Dropout(p=0.15),
-            nn.Conv2d(in_channels=8, out_channels=8, kernel_size=7),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4),
             nn.ReLU(),
         )
 
         self.fc = nn.Sequential(
-            nn.Linear(800, 128),
+            nn.Linear(64, 128),
             nn.ReLU(),
             nn.Dropout(p=0.25),
             nn.Linear(128, 10),
@@ -109,11 +109,11 @@ def main():
 
     net = MnistConv()
     net.to_(device)
-    regularizer = nn.L2Regularizer(net.parameters(), alpha=5e-2, reduction="mean")
+    regularizer = nn.L2Regularizer(net.parameters(), alpha=1e-1, reduction="mean")
 
     optimizer = kraft.optim.Adam(net.parameters(), lr=5e-3)
 
-    for epoch in range(10):
+    for epoch in range(20):
         random.shuffle(train)
 
         train_epoch(net, device, optimizer, regularizer, train)
