@@ -7,7 +7,7 @@ class L1Regularizer(Regularizer):
         self._alpha = alpha
         self._reduction = reduction
 
-    def add_to_loss(self, loss):
+    def get_loss(self):
         addition = 0
 
         for parameter in self._parameters:
@@ -17,7 +17,7 @@ class L1Regularizer(Regularizer):
                 addition = addition + parameter.abs().sum()
 
         if self._reduction == "mean":
-            return loss + self._alpha * (addition / len(self._parameters))
+            return self._alpha * (addition / len(self._parameters))
 
-        return loss + self._alpha * addition
+        return self._alpha * addition
 

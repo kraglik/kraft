@@ -12,7 +12,7 @@ class Sqrt(Function):
         np = kraft.get_backend(var)
 
         return kraft.Variable(
-            data=np.sqrt(var),
+            data=np.sqrt(var.data),
             device=var.device,
             dtype=var.data.dtype,
             requires_grad=var.requires_grad,

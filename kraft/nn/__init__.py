@@ -19,3 +19,6 @@ from .regularizers import (
     L1Regularizer,
     L2Regularizer,
 )
+from .norm import (
+    BatchNorm,
+)

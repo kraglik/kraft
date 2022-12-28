@@ -52,7 +52,7 @@ def randn(
         requires_grad: bool = True,
         device: Optional[Device] = None,
 ) -> Variable:
-    if not isinstance(shape, list):
+    if not isinstance(shape, (list, tuple)):
         shape = (shape, )
 
     return _operation(

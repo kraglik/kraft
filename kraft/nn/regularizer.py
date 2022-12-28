@@ -8,5 +8,5 @@ class Regularizer(ABC):
         self._parameters = parameters
 
     @abstractmethod
-    def add_to_loss(self, loss):
+    def get_loss(self):
         raise NotImplementedError
