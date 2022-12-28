@@ -1,5 +1,6 @@
 import kraft
 from kraft.autograd import Function
+from kraft.autograd.utils import broadcast
 
 
 class Add(Function):
@@ -14,7 +15,18 @@ class Add(Function):
 
     @staticmethod
     def backward(ctx, grad):
-        return grad, grad
+        left, right = ctx.inputs
+
+        return (
+            broadcast(
+                input_grad=grad,
+                target_grad=left.data,
+            ),
+            broadcast(
+                input_grad=grad,
+                target_grad=right.data,
+            )
+        )
 
 
 class AddVarFloat(Function):
@@ -29,7 +41,7 @@ class AddVarFloat(Function):
 
     @staticmethod
     def backward(ctx, grad):
-        return grad
+        return broadcast(input_grad=grad, target_grad=ctx.inputs[0].data)
 
 
 def add(left, right):

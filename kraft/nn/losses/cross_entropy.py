@@ -20,8 +20,6 @@ def ce_loss(output: Variable, target: Variable, reduction="mean"):
 
     return result
 
-    # return softmax_cross_entropy(output, target)
-
 
 def _logsumexp(x, axis=1):
     m = x.max(axis=axis, keep_dims=True)

@@ -7,14 +7,12 @@ class SGD(Optimizer):
         self,
         parameters,
         lr=1e-2,
-        nesterov=False,
         momentum=0.0,
     ):
         super().__init__(parameters)
 
         self._lr = lr
         self._momentum = momentum
-        self._nesterov = nesterov
         self._cache = {
             parameter: get_backend(parameter).zeros(parameter.data.shape)
             for parameter in self._parameters
@@ -25,23 +23,20 @@ class SGD(Optimizer):
             param.zero_grad()
 
     def step(self, retain_graph=False):
-        if self._momentum == 0:
-            for parameter in self._parameters:
-                parameter.data -= parameter.grad * self._lr
+        for parameter in self._parameters:
+            if not parameter.requires_grad:
+                continue
 
-        else:
-            if self._nesterov:
-                for parameter in self._parameters:
-                    parameter.data -= self._cache[parameter] * self._momentum * self._lr
+            # A trivial case
+            if self._momentum == 0.0:
+                dw = parameter.grad
+                parameter.data -= dw * self._lr
 
-                for parameter in self._parameters:
-                    dw = parameter.grad
-                    self._cache[parameter] *= self._momentum
-                    self._cache[parameter] += dw * (1.0 - self._momentum)
-                    parameter.data -= dw * (1.0 - self._momentum) * self._lr
-
+            # A more sophisticated case with momentum
             else:
-                for parameter in self._parameters:
-                    dw = parameter.grad
-                    self._cache[parameter] = self._cache[parameter] * self._momentum + dw * (1.0 - self._momentum)
-                    parameter.data -= self._cache[parameter] * self._lr
+                dw = parameter.grad * (1.0 - self._momentum)
+                cache = self._cache[parameter] * self._momentum
+                update = dw + cache
+
+                self._cache[parameter] = update
+                parameter.data -= update * self._lr

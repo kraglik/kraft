@@ -1,6 +1,6 @@
 from .add import Add, add, add_var_float
 from .sum import Sum, sum_var
-from .sub import Sub, sub
+from .sub import Sub, sub, sub_float_var, sub_var_float
 from .div import Div, div
 from .div import DivVarFloat, DivFloatVar, div_var_float, div_float_var
 from .mul import Mul, mul

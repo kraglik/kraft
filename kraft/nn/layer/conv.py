@@ -14,7 +14,7 @@ class Conv2d(Module):
         kernel_size,
         stride=1,
         pad=0,
-        nobias=False,
+        bias=True,
         dtype=kraft.float32,
     ):
         super().__init__()
@@ -27,7 +27,7 @@ class Conv2d(Module):
 
         self.W = Parameter(self._init_weights())
 
-        if nobias:
+        if not bias:
             self.b = None
         else:
             self.b = Parameter(kraft.randn([1, out_channels, 1, 1], dtype=dtype).data * 0.05 - 0.025)
@@ -35,11 +35,15 @@ class Conv2d(Module):
     def _init_weights(self):
         C, OC = self.in_channels, self.out_channels
         KH, KW = pair(self.kernel_size)
-        # scale = np.sqrt(1 / (C * KH * KW))
-        weights_data = kraft.randn([OC, C, KH, KW], dtype=self.dtype).data * 0.05 - 0.025
+        scale = np.sqrt(1 / (C * KH * KW))
+        weights_data = kraft.randn([OC, C, KH, KW], dtype=self.dtype).data * scale
 
         return weights_data
 
     def forward(self, x):
         y = conv2d(x, self.W, self.stride, self.pad)
-        return y + self.b
+
+        if self.b is not None:
+            y = y + self.b
+
+        return y

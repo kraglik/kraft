@@ -24,7 +24,7 @@ class Linear(Module):
                 ).data * 0.05 - 0.025
             )
         else:
-            self.bias = kraft.zeros(output_dims, dtype=kraft.float32, requires_grad=False)
+            self.bias = Parameter(kraft.zeros(output_dims, dtype=kraft.float32).data, requires_grad=False)
 
     def forward(self, inputs: kraft.Variable) -> kraft.Variable:
         return inputs @ self.weights + self.bias

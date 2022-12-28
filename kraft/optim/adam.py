@@ -26,14 +26,17 @@ class Adam(Optimizer):
             parameter.zero_grad()
 
     def step(self, retain_grad=False) -> None:
+        self._iteration += 1
+
         for parameter in self._parameters:
+            if not parameter.requires_grad:
+                continue
+
             g = parameter.grad
             np = get_backend(parameter)
 
             self._cache_m[parameter] = (1 - self.b1) * g + self.b1 * self._cache_m[parameter]
-            self._cache_v[parameter] = (1 - self.b2) * (g ** 2) + self.b2 * self._cache_v[parameter]
-            mhat = self._cache_m[parameter] / (1 - self.b1 ** (self._iteration + 1))
-            vhat = self._cache_v[parameter] / (1 - self.b2 ** (self._iteration + 1))
+            self._cache_v[parameter] = (1 - self.b2) * (g * g) + self.b2 * self._cache_v[parameter]
+            mhat = self._cache_m[parameter] / (1 - self.b1 ** self._iteration)
+            vhat = self._cache_v[parameter] / (1 - self.b2 ** self._iteration)
             parameter.data -= self.lr * mhat / (np.sqrt(vhat) + self.eps)
-
-        self._iteration += 1

@@ -159,7 +159,10 @@ class Variable(object):
         )
 
     def __sub__(self, other):
-        from kraft.autograd.ops import sub
+        from kraft.autograd.ops import sub, sub_var_float
+
+        if isinstance(other, (float, int)):
+            return sub_var_float(self, other)
 
         return sub(
             self,
@@ -171,7 +174,10 @@ class Variable(object):
         )
 
     def __rsub__(self, other):
-        from kraft.autograd.ops import sub
+        from kraft.autograd.ops import sub, sub_float_var
+
+        if isinstance(other, (float, int)):
+            return sub_float_var(other, self)
 
         return sub(
             self._to_variable(
@@ -288,7 +294,6 @@ class Variable(object):
         return np.argmax(self.data, axis=axis)
 
     def item(self):
-        assert self.data.shape == (), "Can't get item from non-0 ranked tensor"
         return self.data.item()
 
     def sum(self, axis=None, keep_dims=False):

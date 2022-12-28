@@ -11,13 +11,12 @@ class L2Regularizer(Regularizer):
         addition = 0
 
         for parameter in self._parameters:
-            if self._reduction == "mean":
-                addition = addition + parameter.square().mean()
-            else:
-                addition = addition + parameter.square().sum()
+            p = parameter.square().flatten()
 
-        if self._reduction == "mean":
-            return self._alpha * (addition / len(self._parameters))
+            if self._reduction == "mean":
+                addition = addition + p.mean() / (len(self._parameters))
+            else:
+                addition = addition + p.sum()
 
         return self._alpha * addition
 
