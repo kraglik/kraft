@@ -89,7 +89,7 @@ class Deconv2d(Function):
         image, weights, bias, stride, pad, outsize = ctx.inputs
         stride, pad = pair(stride), pair(pad)
 
-        image_grad = conv2d(grad, weights, bias=None, stride=stride, pad=pad).data
+        image_grad = conv2d(grad, weights, stride=stride, pad=pad).data
         weights_grad = Conv2DGradW.forward(None, grad, image, weights.shape[2:], stride, pad)
         bias_grad = None
 
@@ -132,53 +132,6 @@ class Conv2DGradW(Function):
                       outsize=(xh, xw))
         ggy = conv2d(x, gW, stride=stride, pad=pad)
         return gx.data, ggy.data
-
-
-# =============================================================================
-#  im2col / col2im
-# =============================================================================
-
-class Im2col(Function):
-    @staticmethod
-    def forward(ctx, x, kernel_size, stride, pad, to_matrix):
-        y = im2col_array(x, kernel_size, stride, pad, to_matrix)
-        return y
-
-    @staticmethod
-    def backward(ctx, gy):
-        x, kernel_size, stride, pad, to_matrix = ctx.inputs
-
-        gx = col2im(gy, x.shape, kernel_size, stride, pad, to_matrix)
-        return gx
-
-
-def im2col(x, kernel_size, stride=1, pad=0, to_matrix=True):
-    y = Im2col()(x, kernel_size, stride, pad, to_matrix)
-    return y
-
-
-class Col2im(Function):
-    @staticmethod
-    def forward(ctx, x, input_shape, kernel_size, stride, pad, to_matrix):
-        y = col2im_array(
-            x,
-            input_shape,
-            kernel_size,
-            stride,
-            pad,
-            to_matrix
-        )
-        return y
-
-    @staticmethod
-    def backward(ctx, gy):
-        _, input_shape, kernel_size, stride, pad, to_matrix = ctx.inputs
-        gx = im2col(gy, kernel_size, stride, pad, to_matrix)
-        return gx
-
-
-def col2im(x, input_shape, kernel_size, stride=1, pad=0, to_matrix=True):
-    return Col2im()(x, input_shape, kernel_size, stride, pad, to_matrix)
 
 
 def _deconv(image, weights, stride, pad):
