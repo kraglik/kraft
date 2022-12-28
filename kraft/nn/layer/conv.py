@@ -35,8 +35,8 @@ class Conv2d(Module):
     def _init_weights(self):
         C, OC = self.in_channels, self.out_channels
         KH, KW = pair(self.kernel_size)
-        scale = np.sqrt(1 / (C * KH * KW))
-        weights_data = kraft.randn([OC, C, KH, KW], dtype=self.dtype) * scale
+        # scale = np.sqrt(1 / (C * KH * KW))
+        weights_data = kraft.randn([OC, C, KH, KW], dtype=self.dtype).data * 0.05 - 0.025
 
         return weights_data
 

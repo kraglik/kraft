@@ -41,7 +41,6 @@ class MnistConv(nn.Module):
     def forward(self, xs):
         xs = self.conv(xs)
         xs = self.fc(xs.flatten())
-        # xs = fun.softmax(xs)
 
         return xs
 
@@ -110,9 +109,9 @@ def main():
 
     net = MnistConv()
     net.to_(device)
-    regularizer = nn.L2Regularizer(net.parameters(), alpha=1e-2, reduction="mean")
+    regularizer = nn.L2Regularizer(net.parameters(), alpha=5e-2, reduction="mean")
 
-    optimizer = kraft.optim.Adam(net.parameters(), lr=1e-3)
+    optimizer = kraft.optim.Adam(net.parameters(), lr=5e-3)
 
     for epoch in range(10):
         random.shuffle(train)
@@ -122,9 +121,6 @@ def main():
     net.eval()
 
     test_epoch(net, device, test)
-
-    # for parameter in net.parameters():
-    #     print(parameter)
 
 
 if __name__ == "__main__":
