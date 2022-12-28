@@ -1,7 +1,7 @@
 from kraft.nn import Regularizer
 
 
-class L2Regularizer(Regularizer):
+class L1Regularizer(Regularizer):
     def __init__(self, parameters, alpha: float = 1e-2, reduction="mean"):
         super().__init__(parameters)
         self._alpha = alpha
@@ -12,9 +12,9 @@ class L2Regularizer(Regularizer):
 
         for parameter in self._parameters:
             if self._reduction == "mean":
-                addition = addition + parameter.square().mean()
+                addition = addition + parameter.abs().mean()
             else:
-                addition = addition + parameter.square().sum()
+                addition = addition + parameter.abs().sum()
 
         if self._reduction == "mean":
             return loss + self._alpha * (addition / len(self._parameters))

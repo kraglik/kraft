@@ -21,26 +21,26 @@ class MnistConv(nn.Module):
         super().__init__()
 
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=16, kernel_size=5),
-            nn.Tanh(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5),
+            nn.Conv2d(in_channels=1, out_channels=8, kernel_size=5),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4),
+            nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3),
             nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3),
+            nn.Sigmoid(),
         )
 
         self.fc = nn.Sequential(
-            nn.Linear(64, 128),
-            nn.Tanh(),
+            nn.Linear(288, 128),
+            nn.Sigmoid(),
             nn.Linear(128, 10),
         )
 
     def forward(self, xs):
         xs = self.conv(xs)
         xs = self.fc(xs.flatten())
-        xs = fun.softmax(xs)
+        # xs = fun.softmax(xs)
 
         return xs
 
@@ -54,8 +54,7 @@ def inputs_targets_from_chunk(chunk, device):
         input = input.reshape((1, 1, 28, 28))
         inputs.append(input)
 
-        target = np.zeros((1, 10))
-        target[0, t] = 1
+        target = np.array([[t]])
         targets.append(target)
 
     inputs = kraft.Variable(np.concatenate(inputs, axis=0) / 255, device=device)
@@ -65,7 +64,7 @@ def inputs_targets_from_chunk(chunk, device):
 
 
 def train_epoch(net, device, optimizer, regularizer, dataset):
-    for chunk in chunked(tqdm(dataset), 256):
+    for chunk in chunked(tqdm(dataset), 16):
         optimizer.zero_grad()
 
         inputs, target = inputs_targets_from_chunk(chunk, device)
@@ -109,11 +108,11 @@ def main():
 
     net = MnistConv()
     net.to_(device)
-    regularizer = nn.L2Regularizer(net.parameters(), alpha=5e-3)
+    regularizer = nn.L2Regularizer(net.parameters(), alpha=1e-1, reduction="mean")
 
-    optimizer = kraft.optim.Adam(net.parameters(), lr=1e-2)
+    optimizer = kraft.optim.SGD(net.parameters(), lr=1e-3, momentum=0.0, nesterov=False)
 
-    for epoch in range(15):
+    for epoch in range(10):
         random.shuffle(train)
 
         train_epoch(net, device, optimizer, regularizer, train)

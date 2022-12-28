@@ -38,6 +38,5 @@ class SGD(Optimizer):
         else:
             for parameter in self._parameters:
                 dw = parameter.grad
-                self._cache[parameter] *= self._momentum
-                self._cache[parameter] += dw * (1.0 - self._momentum)
+                self._cache[parameter] = self._cache[parameter] * self._momentum + dw * (1.0 - self._momentum)
                 parameter.data -= self._cache[parameter] * self._lr

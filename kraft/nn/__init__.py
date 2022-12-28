@@ -15,5 +15,6 @@ from .activation import (
 )
 from .regularizer import Regularizer
 from .regularizers import (
+    L1Regularizer,
     L2Regularizer,
 )
