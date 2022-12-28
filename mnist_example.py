@@ -21,19 +21,20 @@ class MnistConv(nn.Module):
         super().__init__()
 
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=8, kernel_size=5),
+            nn.Conv2d(in_channels=1, out_channels=8, kernel_size=7),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3),
+            nn.Dropout(p=0.15),
+            nn.Conv2d(in_channels=8, out_channels=8, kernel_size=7),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3),
-            nn.Sigmoid(),
+            nn.Dropout(p=0.15),
+            nn.Conv2d(in_channels=8, out_channels=8, kernel_size=7),
+            nn.ReLU(),
         )
 
         self.fc = nn.Sequential(
-            nn.Linear(288, 128),
-            nn.Sigmoid(),
+            nn.Linear(800, 128),
+            nn.ReLU(),
+            nn.Dropout(p=0.25),
             nn.Linear(128, 10),
         )
 
@@ -50,27 +51,28 @@ def inputs_targets_from_chunk(chunk, device):
     targets = []
 
     for i, t in chunk:
-        input = np.array(i, dtype=np.float32) / 255
+        input = np.array(i, dtype=np.float32)
         input = input.reshape((1, 1, 28, 28))
-        inputs.append(input)
+        inputs.append(input / 255)
 
         target = np.array([[t]])
         targets.append(target)
 
-    inputs = kraft.Variable(np.concatenate(inputs, axis=0) / 255, device=device)
+    inputs = kraft.Variable(np.concatenate(inputs, axis=0), device=device)
     target = kraft.Variable(np.concatenate(targets, axis=0), device=device)
 
     return inputs, target
 
 
 def train_epoch(net, device, optimizer, regularizer, dataset):
-    for chunk in chunked(tqdm(dataset), 16):
+    for chunk in chunked(tqdm(dataset), 256):
         optimizer.zero_grad()
 
         inputs, target = inputs_targets_from_chunk(chunk, device)
 
         outputs = net(inputs)
-        loss = fun.ce_loss(outputs, target)
+
+        loss = fun.ce_loss(outputs, target, reduction="mean")
         loss = regularizer.add_to_loss(loss)
 
         loss.backward()
@@ -86,7 +88,7 @@ def test_epoch(net, device, dataset):
         inputs = kraft.Variable(np.array(sample, dtype=np.float32) / 255, device=device)
         inputs = inputs.reshape(1, 1, 28, 28)
 
-        prediction = net(inputs).argmax(axis=1).item()
+        prediction = net(inputs).argmax().item()
         answers[prediction] += 1
 
         correct_answers += prediction == label
@@ -108,16 +110,21 @@ def main():
 
     net = MnistConv()
     net.to_(device)
-    regularizer = nn.L2Regularizer(net.parameters(), alpha=1e-1, reduction="mean")
+    regularizer = nn.L2Regularizer(net.parameters(), alpha=1e-2, reduction="mean")
 
-    optimizer = kraft.optim.SGD(net.parameters(), lr=1e-3, momentum=0.0, nesterov=False)
+    optimizer = kraft.optim.Adam(net.parameters(), lr=1e-3)
 
     for epoch in range(10):
         random.shuffle(train)
 
         train_epoch(net, device, optimizer, regularizer, train)
 
+    net.eval()
+
     test_epoch(net, device, test)
+
+    # for parameter in net.parameters():
+    #     print(parameter)
 
 
 if __name__ == "__main__":

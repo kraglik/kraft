@@ -41,6 +41,9 @@ class Variable(object):
         if isinstance(data, Variable):
             data = data.data
 
+        if isinstance(data, np.ndarray):
+            return data
+
         if kraft.device.is_gpu_available():
             import cupy
 
@@ -53,7 +56,10 @@ class Variable(object):
         if not kraft.device.is_gpu_available():
             raise RuntimeError("GPU is not available!")
 
-        import cupy
+        cupy = kraft.device.get_gpu_backend()
+
+        if isinstance(data, cupy.ndarray) and data.device == self.device.device_info:
+            return data
 
         with cupy.cuda.Device(self.device.index):
             return cupy.array(data, dtype=dtype)

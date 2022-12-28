@@ -6,6 +6,7 @@ from .layer import (
     ConvTranspose2d,
     MaxPool2d,
     AvgPool2d,
+    Dropout,
 )
 from .activation import (
     Sigmoid,

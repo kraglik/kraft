@@ -16,6 +16,7 @@ class Module(object):
     def __init__(self) -> None:
         super().__setattr__("_modules", {})
         super().__setattr__("_parameters", {})
+        self._training = True
 
     def __setattr__(self, key, value):
         params = self.__dict__.get("_parameters")
@@ -31,6 +32,22 @@ class Module(object):
             self._modules[key] = value
 
         return super().__setattr__(key, value)
+
+    @property
+    def training(self):
+        return self._training
+
+    def train(self):
+        self._training = True
+
+        for module in self._modules.values():
+            module.train()
+
+    def eval(self):
+        self._training = False
+
+        for module in self._modules.values():
+            module.eval()
 
     def parameters(self, recursive: bool = True) -> list[Parameter]:
         parameters = list(self._parameters.values())

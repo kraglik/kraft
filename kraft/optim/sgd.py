@@ -25,18 +25,23 @@ class SGD(Optimizer):
             param.zero_grad()
 
     def step(self, retain_graph=False):
-        if self._nesterov:
+        if self._momentum == 0:
             for parameter in self._parameters:
-                parameter.data -= self._cache[parameter] * self._momentum * self._lr
-
-            for parameter in self._parameters:
-                dw = parameter.grad
-                self._cache[parameter] *= self._momentum
-                self._cache[parameter] += dw * (1.0 - self._momentum)
-                parameter.data -= dw * (1.0 - self._momentum) * self._lr
+                parameter.data -= parameter.grad * self._lr
 
         else:
-            for parameter in self._parameters:
-                dw = parameter.grad
-                self._cache[parameter] = self._cache[parameter] * self._momentum + dw * (1.0 - self._momentum)
-                parameter.data -= self._cache[parameter] * self._lr
+            if self._nesterov:
+                for parameter in self._parameters:
+                    parameter.data -= self._cache[parameter] * self._momentum * self._lr
+
+                for parameter in self._parameters:
+                    dw = parameter.grad
+                    self._cache[parameter] *= self._momentum
+                    self._cache[parameter] += dw * (1.0 - self._momentum)
+                    parameter.data -= dw * (1.0 - self._momentum) * self._lr
+
+            else:
+                for parameter in self._parameters:
+                    dw = parameter.grad
+                    self._cache[parameter] = self._cache[parameter] * self._momentum + dw * (1.0 - self._momentum)
+                    parameter.data -= self._cache[parameter] * self._lr

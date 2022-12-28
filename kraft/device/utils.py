@@ -59,3 +59,7 @@ def get_backend(data: np.ndarray | cupy.ndarray | Any):
         return np
 
     return cupy
+
+
+def get_gpu_backend():
+    return cupy

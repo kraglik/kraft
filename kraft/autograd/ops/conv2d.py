@@ -6,99 +6,97 @@ from kraft.autograd.ops.utils.conv import pair, get_conv_outsize, get_deconv_out
 
 class Conv2d(Function):
     @staticmethod
-    def forward(ctx, x, W, b, stride, pad):
-        xp = kraft.get_backend(x)
+    def forward(ctx, image, weights, stride, pad):
+        np = kraft.get_backend(image)
         stride, pad = pair(stride), pair(pad)
 
-        KH, KW = W.shape[2:]
-        col = im2col_array(x.data, (KH, KW), stride, pad, to_matrix=False)
+        kernel_height, kernel_width = weights.shape[2:]
 
-        y = xp.tensordot(col, W.data, ((1, 2, 3), (1, 2, 3)))
+        col = im2col_array(image.data, (kernel_height, kernel_width), stride, pad, to_matrix=False)
+        data = np.tensordot(col, weights.data, ((1, 2, 3), (1, 2, 3)))
+        data = np.rollaxis(data, 3, 1)
 
-        if b is not None:
-            y += b.data
-
-        y = xp.rollaxis(y, 3, 1)
-
-        return kraft.Variable(y, requires_grad=x.requires_grad, device=x.device, dtype=x.dtype)
+        return kraft.Variable(
+            data=data,
+            requires_grad=image.requires_grad,
+            device=image.device,
+            dtype=image.dtype
+        )
 
     @staticmethod
-    def backward(ctx, gy):
-        x, W, b, stride, pad = ctx.inputs
+    def backward(ctx, grad):
+        image, weights, stride, pad = ctx.inputs
+
+        np = kraft.get_backend(image)
 
         stride, pad = pair(stride), pair(pad)
 
-        # ==== gx ====
-        gx = Deconv2d.forward(
-            None,
-            gy,
-            W,
-            b=None,
+        image_grad = _deconv(
+            grad,
+            weights,
             stride=stride,
             pad=pad,
-            outsize=(x.shape[2], x.shape[3])
-        ).data
-        # ==== gW ====
-        gW = Conv2DGradW.forward(None, x, gy, W.shape[2:], stride, pad)
-        # ==== gb ====
-        gb = None
+        )
 
-        if b.data is not None:
-            gb = gy.sum(axis=(0, 2, 3))
+        kernel_height, kernel_width = weights.shape[2:]
+        col = im2col_array(image.data, (kernel_height, kernel_width), stride, pad, to_matrix=False)
 
-        return gx, gW, gb
+        weights_grad = np.tensordot(grad, col, ((0, 2, 3), (0, 4, 5)))
+
+        return image_grad, weights_grad
 
 
-def conv2d(x, W, b=None, stride=1, pad=0):
-    return Conv2d()(x, W, b, stride, pad)
+def conv2d(image, weights, stride=1, pad=0):
+    return Conv2d()(image, weights, stride, pad)
 
 
 class Deconv2d(Function):
     @staticmethod
-    def forward(ctx, x, W, b, stride, pad, outsize):
-        xp = kraft.get_backend(x)
+    def forward(ctx, image, weights, bias, stride, pad):
+        np = kraft.get_backend(image)
 
         stride, pad = pair(stride), pair(pad)
 
-        Weight = W
-        SH, SW = stride
-        PH, PW = pad
-        C, OC, KH, KW = Weight.shape
-        N, C, H, W = x.shape
+        Weight = weights
+        stride_height, stride_width = stride
+        pad_height, pad_width = pad
+        in_channels, out_channels, kernel_height, kernel_width = Weight.shape
+        batch_size, in_channels, height, width = image.shape
 
-        if outsize is None:
-            out_h = get_deconv_outsize(H, KH, SH, PH)
-            out_w = get_deconv_outsize(W, KW, SW, PW)
-        else:
-            out_h, out_w = pair(outsize)
-        img_shape = (N, OC, out_h, out_w)
+        out_h = get_deconv_outsize(height, kernel_height, stride_height, pad_height)
+        out_w = get_deconv_outsize(weights, kernel_width, stride_width, pad_width)
 
-        gcol = xp.tensordot(Weight.data, (x.data if isinstance(x, kraft.Variable) else x), (0, 1))
-        gcol = xp.rollaxis(gcol, 3)
-        y = col2im_array(gcol, img_shape, (KH, KW), stride, pad,
-                         to_matrix=False)
-        # b, k, h, w
-        if b is not None:
-            y += b.data.reshape((1, b.size, 1, 1))
+        img_shape = (batch_size, out_channels, out_h, out_w)
+
+        gcol = np.tensordot(Weight.data, (image.data if isinstance(image, kraft.Variable) else image), (0, 1))
+        gcol = np.rollaxis(gcol, 3)
+        y = col2im_array(
+            gcol,
+            img_shape,
+            (kernel_height, kernel_width),
+            stride,
+            pad,
+            to_matrix=False
+        )
+
+        if bias is not None:
+            y += bias.data.reshape((1, bias.size, 1, 1))
 
         return kraft.Variable(y, requires_grad=Weight.requires_grad, device=Weight.device, dtype=Weight.dtype)
 
     @staticmethod
-    def backward(ctx, gy):
-        x, W, b, stride, pad, outsize = ctx.inputs
+    def backward(ctx, grad):
+        image, weights, bias, stride, pad, outsize = ctx.inputs
         stride, pad = pair(stride), pair(pad)
 
-        # ==== gx ====
-        gx = conv2d(gy, W, b=None, stride=stride, pad=pad).data
-        # ==== gW ====
-        gW = Conv2DGradW.forward(None, gy, x, W.shape[2:], stride, pad)
-        # ==== gb ====
-        gb = None
+        image_grad = conv2d(grad, weights, bias=None, stride=stride, pad=pad).data
+        weights_grad = Conv2DGradW.forward(None, grad, image, weights.shape[2:], stride, pad)
+        bias_grad = None
 
-        if b.data is not None:
-            gb = gy.sum(axis=(0, 2, 3))
+        if bias.data is not None:
+            bias_grad = grad.sum(axis=(0, 2, 3))
 
-        return gx, gW, gb
+        return image_grad, weights_grad, bias_grad
 
 
 def deconv2d(x, W, b=None, stride=1, pad=0, outsize=None):
@@ -181,3 +179,32 @@ class Col2im(Function):
 
 def col2im(x, input_shape, kernel_size, stride=1, pad=0, to_matrix=True):
     return Col2im()(x, input_shape, kernel_size, stride, pad, to_matrix)
+
+
+def _deconv(image, weights, stride, pad):
+    np = kraft.get_backend(image)
+
+    stride, pad = pair(stride), pair(pad)
+
+    stride_height, stride_width = stride
+    pad_height, pad_width = pad
+    in_channels, out_channels, kernel_height, kernel_width = weights.shape
+    batch_size, in_channels, height, width = image.shape
+
+    out_h = get_deconv_outsize(height, kernel_height, stride_height, pad_height)
+    out_w = get_deconv_outsize(width, kernel_width, stride_width, pad_width)
+
+    img_shape = (batch_size, out_channels, out_h, out_w)
+
+    gcol = np.tensordot(weights.data, (image.data if isinstance(image, kraft.Variable) else image), (0, 1))
+    gcol = np.rollaxis(gcol, 3)
+    y = col2im_array(
+        gcol,
+        img_shape,
+        (kernel_height, kernel_width),
+        stride,
+        pad,
+        to_matrix=False
+    )
+
+    return y

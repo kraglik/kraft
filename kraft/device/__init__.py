@@ -4,6 +4,7 @@ from .utils import (
     get_available_gpu_devices,
     get_cpu_device,
     get_gpu_device,
+    get_gpu_backend,
 )
 
 __all__ = [

@@ -30,7 +30,7 @@ class Conv2d(Module):
         if nobias:
             self.b = None
         else:
-            self.b = Parameter(np.zeros(out_channels, dtype=dtype))
+            self.b = Parameter(kraft.randn([1, out_channels, 1, 1], dtype=dtype).data * 0.05 - 0.025)
 
     def _init_weights(self):
         C, OC = self.in_channels, self.out_channels
@@ -41,5 +41,5 @@ class Conv2d(Module):
         return weights_data
 
     def forward(self, x):
-        y = conv2d(x, self.W, self.b, self.stride, self.pad)
-        return y
+        y = conv2d(x, self.W, self.stride, self.pad)
+        return y + self.b

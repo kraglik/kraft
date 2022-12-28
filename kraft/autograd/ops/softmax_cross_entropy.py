@@ -11,7 +11,7 @@ class SoftmaxCrossEntropy(Function):
         np = kraft.get_backend(outputs)
 
         batch_n = outputs.shape[0]
-        log_z = logsumexp(outputs.data, axis=1)
+        log_z = logsumexp(outputs.data, axis=-1)
         log_p = outputs.data - log_z
 
         log_p = log_p[np.arange(batch_n), targets.data.ravel()]
