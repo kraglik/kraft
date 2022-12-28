@@ -2,9 +2,7 @@ import numpy
 
 import kraft
 from kraft.autograd import Function
-from kraft.autograd.ops.conv2d import col2im
 from kraft.autograd.ops.utils.conv import im2col_array, pair, col2im_array
-from kraft.autograd.utils import broadcast_to
 
 
 class AvgPool2d(Function):
