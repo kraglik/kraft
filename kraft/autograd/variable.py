@@ -29,7 +29,7 @@ class Variable(object):
         return self.data.shape
 
     def _to_ndarray(self, data, dtype):
-        dtype = dtype or data.dtype
+        dtype = dtype or getattr(data, "dtype", None)
 
         if self.device is None or self.device.is_cpu:
             return self._to_np_ndarray(data, dtype)
