@@ -4,7 +4,7 @@ from kraft.device.utils import get_backend
 
 class Adam(Optimizer):
 
-    def __init__(self, parameters, lr=0.001, b1=0.9, b2=0.999, eps=10 ** -8):
+    def __init__(self, parameters, lr=0.001, b1=0.99, b2=0.999, eps=10 ** -8):
         super(Adam, self).__init__(parameters)
         self.lr = lr
         self.b1 = b1

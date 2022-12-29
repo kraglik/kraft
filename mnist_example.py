@@ -20,13 +20,13 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.residual = nn.Sequential(
-            nn.Conv2d(out_channels, out_channels // 2, kernel_size=1),
+            nn.Conv2d(out_channels, out_channels // 2, kernel_size=3, pad=1),
             nn.ReLU(),
             nn.Dropout(p=0.15),
             nn.Conv2d(out_channels // 2, out_channels // 2, kernel_size=3, pad=1),
             nn.ReLU(),
             nn.Dropout(p=0.15),
-            nn.Conv2d(out_channels // 2, out_channels, kernel_size=1),
+            nn.Conv2d(out_channels // 2, out_channels, kernel_size=3, pad=1),
         )
 
     def forward(self, xs):
