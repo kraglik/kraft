@@ -357,10 +357,14 @@ class Variable(object):
         return max_(self, axis, keep_dims)
 
     def zero_grad(self):
-        self.grad_fn = None
+        if self.grad_fn is not None:
+            self.grad_fn.drop()
 
-        if self.requires_grad:
-            self.grad = np.zeros_like(self.data)
+        del self.grad
+        del self.grad_fn
+
+        self.grad_fn = None
+        self.grad = None
 
     def backward(self, grad=None):
         grad = (
@@ -368,7 +372,10 @@ class Variable(object):
             if grad
             else kraft.get_backend(self.data).ones_like(self.data)
         )
-        self.grad += grad
+        if self.grad is None:
+            self.grad = grad
+        else:
+            self.grad += grad
 
         visited_functions = set()
         functions = [self.grad_fn]

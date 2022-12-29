@@ -101,7 +101,7 @@ def train_epoch(net, device, optimizer, regularizer, dataset):
         outputs = net(inputs)
 
         loss = fun.ce_loss(outputs, target, reduction="mean")
-        loss = loss + regularizer.get_loss()
+        # loss = loss + regularizer.get_loss(net.parameters())
 
         loss.backward()
         optimizer.step()
@@ -138,7 +138,7 @@ def main():
 
     net = MnistConv()
     net.to_(device)
-    regularizer = nn.L2Regularizer(net.parameters(), alpha=1e-2, reduction="mean")
+    regularizer = nn.L2Regularizer(alpha=1e-2, reduction="mean")
 
     # optimizer = kraft.optim.SGD(net.parameters(), lr=1)
     optimizer = kraft.optim.Adam(net.parameters(), lr=1e-2)
