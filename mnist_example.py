@@ -41,23 +41,20 @@ class MnistConv(nn.Module):
 
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=8, kernel_size=7, bias=True),
-            nn.ReLU(),
-
-            ResidualBlock(8, 8),
             ResidualBlock(8, 8),
 
             nn.MaxPool2d(kernel_size=2, stride=2),
+
+            ResidualBlock(8, 8),
             nn.Conv2d(in_channels=8, out_channels=16, kernel_size=4, bias=True),
-            nn.ReLU(),
-
-            ResidualBlock(16, 16),
             ResidualBlock(16, 16),
 
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=4, bias=True),
-            nn.ReLU(),
 
+            ResidualBlock(16, 16),
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=4, bias=True),
             ResidualBlock(32, 32),
+
             ResidualBlock(32, 32),
         )
 
@@ -86,8 +83,16 @@ def inputs_targets_from_chunk(chunk, device):
         target = np.array([[t]])
         targets.append(target)
 
-    inputs = kraft.Variable(np.concatenate(inputs, axis=0), device=device)
-    target = kraft.Variable(np.concatenate(targets, axis=0), device=device)
+    inputs = kraft.Variable(
+        np.concatenate(inputs, axis=0),
+        device=device,
+        requires_grad=False,
+    )
+    target = kraft.Variable(
+        np.concatenate(targets, axis=0),
+        device=device,
+        requires_grad=False,
+    )
 
     return inputs, target
 
@@ -113,7 +118,11 @@ def test_epoch(net, device, dataset):
     answers = Counter()
 
     for sample, label in tqdm(dataset):
-        inputs = kraft.Variable(np.array(sample, dtype=np.float32) / 255, device=device)
+        inputs = kraft.Variable(
+            np.array(sample, dtype=np.float32) / 255,
+            device=device,
+            requires_grad=False,
+        )
         inputs = inputs.reshape(1, 1, 28, 28)
 
         prediction = net(inputs).argmax().item()
@@ -141,9 +150,9 @@ def main():
     regularizer = nn.L2Regularizer(alpha=1e-2, reduction="mean")
 
     # optimizer = kraft.optim.SGD(net.parameters(), lr=1)
-    optimizer = kraft.optim.Adam(net.parameters(), lr=1e-2)
+    optimizer = kraft.optim.Adam(net.parameters(), lr=5e-3)
 
-    for epoch in range(40):
+    for epoch in range(20):
         random.shuffle(train)
 
         train_epoch(net, device, optimizer, regularizer, train)
