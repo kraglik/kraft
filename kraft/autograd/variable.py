@@ -357,6 +357,8 @@ class Variable(object):
         return max_(self, axis, keep_dims)
 
     def zero_grad(self):
+        self.grad_fn = None
+
         if self.requires_grad:
             self.grad = np.zeros_like(self.data)
 
