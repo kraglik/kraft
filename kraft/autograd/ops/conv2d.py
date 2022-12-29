@@ -18,7 +18,7 @@ class Conv2d(Function):
 
         return kraft.Variable(
             data=data,
-            requires_grad=image.requires_grad,
+            requires_grad=image.requires_grad or weights.requires_grad,
             device=image.device,
             dtype=image.dtype
         )
