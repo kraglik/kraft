@@ -89,7 +89,7 @@ class Deconv2d(Function):
         image, weights, bias, stride, pad, outsize = ctx.inputs
         stride, pad = pair(stride), pair(pad)
 
-        image_grad = conv2d(grad, weights, stride=stride, pad=pad).data
+        image_grad = Conv2d.forward(None, grad, weights, stride=stride, pad=pad).data
         weights_grad = Conv2DGradW.forward(None, grad, image, weights.shape[2:], stride, pad)
         bias_grad = None
 

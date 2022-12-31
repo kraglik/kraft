@@ -20,5 +20,5 @@ from .regularizers import (
     L2Regularizer,
 )
 from .norm import (
-    BatchNorm,
+    BatchNorm2d,
 )

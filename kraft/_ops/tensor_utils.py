@@ -47,7 +47,7 @@ def _operation(
 
 
 def randn(
-        shape: int | list[int],
+        shape: int | list[int] | tuple[int, ...],
         dtype: Type[single] = np.float32,
         requires_grad: bool = True,
         device: Optional[Device] = None,

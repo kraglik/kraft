@@ -1,1 +1,1 @@
-from .batch_norm import BatchNorm
+from .batch_norm_2d import BatchNorm2d

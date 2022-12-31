@@ -17,16 +17,17 @@ from more_itertools import chunked
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, channels):
         super().__init__()
         self.residual = nn.Sequential(
-            nn.Conv2d(out_channels, out_channels // 2, kernel_size=3, pad=1),
+            nn.Conv2d(channels, channels // 2, kernel_size=3, pad=1),
             nn.ReLU(),
-            nn.Dropout(p=0.15),
-            nn.Conv2d(out_channels // 2, out_channels // 2, kernel_size=3, pad=1),
+            # nn.Dropout(p=0.15),
+            nn.Conv2d(channels // 2, channels // 2, kernel_size=3, pad=1),
             nn.ReLU(),
-            nn.Dropout(p=0.15),
-            nn.Conv2d(out_channels // 2, out_channels, kernel_size=3, pad=1),
+            # nn.Dropout(p=0.15),
+            nn.Conv2d(channels // 2, channels, kernel_size=3, pad=1),
+            nn.BatchNorm2d(channels),
         )
 
     def forward(self, xs):
@@ -41,21 +42,18 @@ class MnistConv(nn.Module):
 
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=8, kernel_size=7, bias=True),
-            ResidualBlock(8, 8),
-
+            nn.BatchNorm2d(8),
+            ResidualBlock(8),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
-            ResidualBlock(8, 8),
             nn.Conv2d(in_channels=8, out_channels=16, kernel_size=4, bias=True),
-            ResidualBlock(16, 16),
-
+            nn.BatchNorm2d(16),
+            ResidualBlock(16),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
-            ResidualBlock(16, 16),
             nn.Conv2d(in_channels=16, out_channels=32, kernel_size=4, bias=True),
-            ResidualBlock(32, 32),
-
-            ResidualBlock(32, 32),
+            nn.BatchNorm2d(32),
+            ResidualBlock(32),
         )
 
         self.fc = nn.Sequential(
@@ -98,7 +96,7 @@ def inputs_targets_from_chunk(chunk, device):
 
 
 def train_epoch(net, device, optimizer, regularizer, dataset):
-    for chunk in chunked(tqdm(dataset), 512):
+    for chunk in chunked(tqdm(dataset), 32):
         optimizer.zero_grad()
 
         inputs, target = inputs_targets_from_chunk(chunk, device)
@@ -149,10 +147,10 @@ def main():
     net.to_(device)
     regularizer = nn.L2Regularizer(alpha=1e-2, reduction="mean")
 
-    # optimizer = kraft.optim.SGD(net.parameters(), lr=1)
+    # optimizer = kraft.optim.SGD(net.parameters(), lr=5e-1)
     optimizer = kraft.optim.Adam(net.parameters(), lr=5e-3)
 
-    for epoch in range(20):
+    for epoch in range(10):
         random.shuffle(train)
 
         train_epoch(net, device, optimizer, regularizer, train)

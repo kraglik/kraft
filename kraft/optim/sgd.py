@@ -8,11 +8,13 @@ class SGD(Optimizer):
         parameters,
         lr=1e-2,
         momentum=0.0,
+        nesterov=False,
     ):
         super().__init__(parameters)
 
         self._lr = lr
         self._momentum = momentum
+        self._nesterov = nesterov
         self._cache = {
             parameter: get_backend(parameter).zeros(parameter.data.shape)
             for parameter in self._parameters
@@ -34,9 +36,12 @@ class SGD(Optimizer):
 
             # A more sophisticated case with momentum
             else:
-                dw = parameter.grad * (1.0 - self._momentum)
+                dw = parameter.grad * (1.0 - self._momentum) * self._lr
                 cache = self._cache[parameter] * self._momentum
                 update = dw + cache
 
                 self._cache[parameter] = update
-                parameter.data -= update * self._lr
+                parameter.data -= update
+
+                if self._nesterov:
+                    parameter.data -= self._momentum * update
