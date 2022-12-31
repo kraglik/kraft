@@ -22,10 +22,8 @@ class ResidualBlock(nn.Module):
         self.residual = nn.Sequential(
             nn.Conv2d(channels, channels // 2, kernel_size=3, pad=1),
             nn.ReLU(),
-            # nn.Dropout(p=0.15),
             nn.Conv2d(channels // 2, channels // 2, kernel_size=3, pad=1),
             nn.ReLU(),
-            # nn.Dropout(p=0.15),
             nn.Conv2d(channels // 2, channels, kernel_size=3, pad=1),
             nn.BatchNorm2d(channels),
         )
@@ -96,7 +94,7 @@ def inputs_targets_from_chunk(chunk, device):
 
 
 def train_epoch(net, device, optimizer, regularizer, dataset):
-    for chunk in chunked(tqdm(dataset), 32):
+    for chunk in chunked(tqdm(dataset), 128):
         optimizer.zero_grad()
 
         inputs, target = inputs_targets_from_chunk(chunk, device)
