@@ -1,5 +1,6 @@
 import kraft
 from kraft.autograd import Function
+from kraft.autograd.ops.utils.sum_to import array_sum_to
 from kraft.autograd.utils import broadcast
 
 
@@ -16,17 +17,13 @@ class Add(Function):
     @staticmethod
     def backward(ctx, grad):
         left, right = ctx.inputs
+        left_grad, right_grad = grad, grad
 
-        return (
-            broadcast(
-                input_grad=grad,
-                target_grad=left.data,
-            ),
-            broadcast(
-                input_grad=grad,
-                target_grad=right.data,
-            )
-        )
+        if left.shape != right.shape:  # for broadcaset
+            left_grad = array_sum_to(left_grad, left.shape)
+            right_grad = array_sum_to(right_grad, right.shape)
+
+        return left_grad, right_grad
 
 
 class AddVarFloat(Function):
@@ -41,7 +38,12 @@ class AddVarFloat(Function):
 
     @staticmethod
     def backward(ctx, grad):
-        return broadcast(input_grad=grad, target_grad=ctx.inputs[0].data)
+        var, _ = ctx.inputs
+
+        if var.shape != grad.shape:
+            grad = array_sum_to(grad, var.shape)
+
+        return grad
 
 
 def add(left, right):

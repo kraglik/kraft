@@ -1,7 +1,7 @@
 from typing import Any, Optional, Type
 
 import numpy as np
-from numpy import single
+from collections import deque
 
 import kraft.device.utils
 from kraft.device import Device
@@ -378,7 +378,8 @@ class Variable(object):
             self.grad += grad
 
         visited_functions = set()
-        functions = [self.grad_fn]
+        functions = deque()
+        functions.appendleft(self.grad_fn)
 
         while functions:
             node = functions.pop()
@@ -389,9 +390,9 @@ class Variable(object):
             node.backward()
 
             for var in node.ctx.input_vars:
-                if var.grad_fn not in visited_functions:
+                if id(var.grad_fn) not in visited_functions:
                     functions.append(var.grad_fn)
-                    visited_functions.add(var.grad_fn)
+                    visited_functions.add(id(var.grad_fn))
 
     def __str__(self):
         grad_fn = self.grad_fn

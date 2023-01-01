@@ -1,4 +1,5 @@
 import numpy as np
+import cupy
 
 import kraft
 
@@ -60,12 +61,6 @@ def col2im_array(col, img_shape, kernel_size, stride, pad, to_matrix=True):
 
 
 def _im2col_gpu(img, kernel_size, stride, pad):
-    """im2col function for GPU.
-    This code is ported from Chainer:
-    https://github.com/chainer/chainer/blob/v6.4.0/chainer/utils/conv.py
-    """
-    import cupy
-
     n, c, h, w = img.shape
     kh, kw = pair(kernel_size)
     sy, sx = pair(stride)
@@ -101,12 +96,6 @@ def _im2col_gpu(img, kernel_size, stride, pad):
 
 
 def _col2im_gpu(col, sy, sx, ph, pw, h, w):
-    """col2im function for GPU.
-    This code is ported from Chainer:
-    https://github.com/chainer/chainer/blob/v6.4.0/chainer/utils/conv.py
-    """
-    import cupy
-
     n, c, kh, kw, out_h, out_w = col.shape
     dx, dy = 1, 1
     img = cupy.empty((n, c, h, w), dtype=col.dtype)
@@ -139,8 +128,8 @@ def _col2im_gpu(col, sy, sx, ph, pw, h, w):
         ''',
         'col2im')(col.reduced_view(),
                   h, w, out_h, out_w, kh, kw, sy, sx, ph, pw, dx, dy, img)
-    return img
 
+    return img
 
 
 def get_deconv_outsize(size, k, s, p):

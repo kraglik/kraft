@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from .utils import broadcast
+import kraft
+from .utils import broadcast, array_sum_to
 from .variable import Variable
 
 
@@ -45,12 +46,12 @@ class BackwardFunction(object):
 
         for inp, grad in zip(self.ctx.input_vars, grads):
             if inp.requires_grad:
-                update = broadcast(inp.data, grad)
+                update = array_sum_to(grad, inp.shape)
 
                 if inp.grad is None:
                     inp.grad = update
                 else:
-                    inp.grad += broadcast(inp.data, grad)
+                    inp.grad += array_sum_to(grad, inp.shape)
 
 
 class Function(ABC):

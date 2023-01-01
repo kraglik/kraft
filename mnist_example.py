@@ -16,22 +16,30 @@ from tqdm import tqdm
 from more_itertools import chunked
 
 
-class ResidualBlock(nn.Module):
-    def __init__(self, channels):
+class ConvBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size):
         super().__init__()
+
         self.residual = nn.Sequential(
-            nn.Conv2d(channels, channels // 2, kernel_size=3, pad=1),
+            nn.Conv2d(out_channels, out_channels // 2, kernel_size=3, pad=1),
             nn.ReLU(),
-            nn.Conv2d(channels // 2, channels // 2, kernel_size=3, pad=1),
+            nn.Conv2d(out_channels // 2, out_channels // 2, kernel_size=3, pad=1),
             nn.ReLU(),
-            nn.Conv2d(channels // 2, channels, kernel_size=3, pad=1),
-            nn.BatchNorm2d(channels),
+            nn.Conv2d(out_channels // 2, out_channels, kernel_size=3, pad=1),
+            nn.BatchNorm2d(out_channels, momentum=0.5),
+        )
+
+        self.block = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size),
+            nn.BatchNorm2d(out_channels, momentum=0.5),
         )
 
     def forward(self, xs):
+        xs = self.block(xs)
         xs = xs + self.residual(xs)
+        xs = fun.relu(xs)
 
-        return fun.relu(xs)
+        return xs
 
 
 class MnistConv(nn.Module):
@@ -39,25 +47,19 @@ class MnistConv(nn.Module):
         super().__init__()
 
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=8, kernel_size=7, bias=True),
-            nn.BatchNorm2d(8),
-            ResidualBlock(8),
+            ConvBlock(in_channels=1, out_channels=32, kernel_size=7),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
-            nn.Conv2d(in_channels=8, out_channels=16, kernel_size=4, bias=True),
-            nn.BatchNorm2d(16),
-            ResidualBlock(16),
+            ConvBlock(in_channels=32, out_channels=64, kernel_size=4),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=4, bias=True),
-            nn.BatchNorm2d(32),
-            ResidualBlock(32),
+            ConvBlock(in_channels=64, out_channels=128, kernel_size=4),
         )
 
         self.fc = nn.Sequential(
-            nn.Linear(32, 64, bias=True),
+            nn.Linear(128, 256),
             nn.ReLU(),
-            nn.Linear(64, 10, bias=True),
+            nn.Linear(256, 10),
         )
 
     def forward(self, xs):
@@ -94,7 +96,7 @@ def inputs_targets_from_chunk(chunk, device):
 
 
 def train_epoch(net, device, optimizer, regularizer, dataset):
-    for chunk in chunked(tqdm(dataset), 128):
+    for chunk in chunked(tqdm(dataset), 64):
         optimizer.zero_grad()
 
         inputs, target = inputs_targets_from_chunk(chunk, device)
@@ -148,7 +150,7 @@ def main():
     # optimizer = kraft.optim.SGD(net.parameters(), lr=5e-1)
     optimizer = kraft.optim.Adam(net.parameters(), lr=5e-3)
 
-    for epoch in range(10):
+    for epoch in range(5):
         random.shuffle(train)
 
         train_epoch(net, device, optimizer, regularizer, train)
